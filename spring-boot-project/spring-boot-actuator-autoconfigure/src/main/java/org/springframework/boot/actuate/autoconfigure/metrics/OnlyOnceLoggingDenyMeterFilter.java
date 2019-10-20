@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,7 +19,6 @@ package org.springframework.boot.actuate.autoconfigure.metrics;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
-import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Meter.Id;
 import io.micrometer.core.instrument.config.MeterFilter;
 import io.micrometer.core.instrument.config.MeterFilterReply;
@@ -29,8 +28,7 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.util.Assert;
 
 /**
- * {@link MeterFilter} to log only once a warning message and deny a {@link Meter}
- * {@link Id}.
+ * {@link MeterFilter} to log only once a warning message and deny a {@link Id Meter.Id}.
  *
  * @author Jon Schneider
  * @author Dmytro Nosan
@@ -38,8 +36,7 @@ import org.springframework.util.Assert;
  */
 public final class OnlyOnceLoggingDenyMeterFilter implements MeterFilter {
 
-	private static final Log logger = LogFactory
-			.getLog(OnlyOnceLoggingDenyMeterFilter.class);
+	private static final Log logger = LogFactory.getLog(OnlyOnceLoggingDenyMeterFilter.class);
 
 	private final AtomicBoolean alreadyWarned = new AtomicBoolean(false);
 

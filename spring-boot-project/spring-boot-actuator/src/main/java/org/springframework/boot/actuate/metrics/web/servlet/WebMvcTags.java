@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,9 +23,11 @@ import javax.servlet.http.HttpServletResponse;
 
 import io.micrometer.core.instrument.Tag;
 
+import org.springframework.boot.actuate.metrics.http.Outcome;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.HandlerMapping;
+import org.springframework.web.util.pattern.PathPattern;
 
 /**
  * Factory methods for {@link Tag Tags} associated with a request-response exchange that
@@ -39,6 +41,8 @@ import org.springframework.web.servlet.HandlerMapping;
  */
 public final class WebMvcTags {
 
+	private static final String DATA_REST_PATH_PATTERN_ATTRIBUTE = "org.springframework.data.rest.webmvc.RepositoryRestHandlerMapping.EFFECTIVE_REPOSITORY_RESOURCE_LOOKUP_PATH";
+
 	private static final Tag URI_NOT_FOUND = Tag.of("uri", "NOT_FOUND");
 
 	private static final Tag URI_REDIRECTION = Tag.of("uri", "REDIRECTION");
@@ -50,18 +54,6 @@ public final class WebMvcTags {
 	private static final Tag EXCEPTION_NONE = Tag.of("exception", "None");
 
 	private static final Tag STATUS_UNKNOWN = Tag.of("status", "UNKNOWN");
-
-	private static final Tag OUTCOME_UNKNOWN = Tag.of("outcome", "UNKNOWN");
-
-	private static final Tag OUTCOME_INFORMATIONAL = Tag.of("outcome", "INFORMATIONAL");
-
-	private static final Tag OUTCOME_SUCCESS = Tag.of("outcome", "SUCCESS");
-
-	private static final Tag OUTCOME_REDIRECTION = Tag.of("outcome", "REDIRECTION");
-
-	private static final Tag OUTCOME_CLIENT_ERROR = Tag.of("outcome", "CLIENT_ERROR");
-
-	private static final Tag OUTCOME_SERVER_ERROR = Tag.of("outcome", "SERVER_ERROR");
 
 	private static final Tag METHOD_UNKNOWN = Tag.of("method", "UNKNOWN");
 
@@ -88,9 +80,7 @@ public final class WebMvcTags {
 	 * @return the status tag derived from the status of the response
 	 */
 	public static Tag status(HttpServletResponse response) {
-		return (response != null)
-				? Tag.of("status", Integer.toString(response.getStatus()))
-				: STATUS_UNKNOWN;
+		return (response != null) ? Tag.of("status", Integer.toString(response.getStatus())) : STATUS_UNKNOWN;
 	}
 
 	/**
@@ -138,8 +128,11 @@ public final class WebMvcTags {
 	}
 
 	private static String getMatchingPattern(HttpServletRequest request) {
-		return (String) request
-				.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
+		PathPattern dataRestPathPattern = (PathPattern) request.getAttribute(DATA_REST_PATH_PATTERN_ATTRIBUTE);
+		if (dataRestPathPattern != null) {
+			return dataRestPathPattern.getPatternString();
+		}
+		return (String) request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
 	}
 
 	private static String getPathInfo(HttpServletRequest request) {
@@ -158,8 +151,7 @@ public final class WebMvcTags {
 	public static Tag exception(Throwable exception) {
 		if (exception != null) {
 			String simpleName = exception.getClass().getSimpleName();
-			return Tag.of("exception", StringUtils.hasText(simpleName) ? simpleName
-					: exception.getClass().getName());
+			return Tag.of("exception", StringUtils.hasText(simpleName) ? simpleName : exception.getClass().getName());
 		}
 		return EXCEPTION_NONE;
 	}
@@ -171,23 +163,8 @@ public final class WebMvcTags {
 	 * @since 2.1.0
 	 */
 	public static Tag outcome(HttpServletResponse response) {
-		if (response != null) {
-			int status = response.getStatus();
-			if (status < 200) {
-				return OUTCOME_INFORMATIONAL;
-			}
-			if (status < 300) {
-				return OUTCOME_SUCCESS;
-			}
-			if (status < 400) {
-				return OUTCOME_REDIRECTION;
-			}
-			if (status < 500) {
-				return OUTCOME_CLIENT_ERROR;
-			}
-			return OUTCOME_SERVER_ERROR;
-		}
-		return OUTCOME_UNKNOWN;
+		Outcome outcome = (response != null) ? Outcome.forStatus(response.getStatus()) : Outcome.UNKNOWN;
+		return outcome.asTag();
 	}
 
 }
